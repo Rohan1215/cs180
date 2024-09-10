@@ -26,7 +26,9 @@
   <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
   <h1 align="middle">Project 1: Images of the Russian Empire </h1>
   <h2 align="middle"> Colorizing the Prokudin-Gorskii photo collection</h2>
-  <h3 align="middle"> Rohan Gulati</h2>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
 
   <br><br>
 
@@ -66,8 +68,9 @@
       </table>
     </div>
     <p>
-      The first naive approach to aligning the channels was comparing every displacement within a [-15, 15] window on the x and y axes to find which displacement best aligned with the blue base layer using the numpy.roll() function. Since these images were roughly small and the true displacement was not
-      too far from (0,0), this method could produce quality results in a small amount of time. However, when the correct displacement is farther away from (0,0) or when the images are huge, the runtime can blow up quadratically. As a result, a new efficient method is necessary. 
+      The first naive approach to aligning the channels was comparing every displacement within a [-15, 15] window on the x and y axes to find which displacement best aligned with the blue base layer using the numpy.roll() function. 
+      To compare the two displacements, I computed the Euclidian distance between the light intensities at the two channels or simply the matrix sum of the squared difference of the corresponding pixels between the two images. 
+      Since these images were roughly small and the true displacement was not too far from (0,0), this method could produce quality results in a small amount of time. However, when the correct displacement is farther away from (0,0) or when the images are huge, the runtime can blow up quadratically. As a result, a new efficient method is necessary. 
       
     </p>
 
@@ -75,11 +78,13 @@
 
     <p>
       To handle larger images with displacements between channels significantly far apart, I implemented a pyramid-scaling algorithm that downscales large images into a coarser resolution and locates the optimal displacement from the bottom-up. 
-      By downscaling to a small image, we can narrow down the region where the optimal displacement exists and only search a small window at each increasing level for it, until we find it for the level 0 image. This greatly sped up the time taken per-image, but it was still
-      taking around 12-14 minutes per large TIF. To further speed up the algorithm, I used Canny edge detection (skimage.feature.canny()) at each layer of the image pyramid. The pyramid algorithm worked the same, except the alignment at each layer used a 
+      By downscaling to a small image, we can narrow down the region where the optimal displacement exists and only search a small window at each increasing level for it, until we find it for the level 0 image. For emir.tif, computing the Euclidian distance 
+      between the two channels' light intensities was not accurate. As a result, I computed the structural similarity index of the two images.This greatly sped up the time taken per-image, but it was still
+      taking around 12-14 minutes per large TIF. To further speed up the algorithm, I used Canny edge detection at each layer of the image pyramid. The pyramid algorithm worked the same, except the alignment at each layer used a 
       filtered binary version of the color channel that isolated the edges within the image, although the downscaling was still done on the unfiltered image. Additionally, instead of computing the Euclidian Distance or phase correlation, I used an XOR on the binary Canny-edge matrices,
-      which greatly reduced the runtime to under a minute for most images.   
+      which greatly reduced the runtime to roughly a minute for most images.   
     </p>
+
     <div align="middle">
       <table style="width:100%">
         <tr align="center">
@@ -108,7 +113,7 @@
           </td>
           <td>
             <img src="out/layered_pyr_lady.png" align="middle" width="300vw" />
-            <figcaption>lady.tif, red = (13, 120), green = (9, 57), 1:02.26s </figcaption>
+            <figcaption>lady.tif, red = (13, 120), green = (9, 57), time = 1:02.26s </figcaption>
           </td>
           <td>
         </tr>
@@ -165,31 +170,62 @@
 
 
     <p>
-      what the bells and whistles
+    For bells and whistles, the two primary changes I implemented on top of the pyramid-scaling was Canny edge detection and automatic color contrasting. 
+    Canny edge detection uses Gaussian smoothing and a Sobel filter to capture and isolate the edges of an image, resulting in a visually-similar binary representation of the image.
+    With this new representation, scoring a displacement becomes extremely efficient -- only an XOR operation is needed across the matrices. This reduced the runtime of each image process from 
+    12 minutes to 50 seconds on average. Regarding implementation, I applied the algorithm before aligning each channel within the image pyramid, while still using the original 
+    image channel for downscaling.
     </p>
 
     <div align="middle">
       <table style="width:100%">
         <tr align="center">
           <td>
-              <img src="images/q5_ambient.png" align="middle" width="400px" />
-              <figcaption>Ambient component only</figcaption>
+              <img src="out/sculpture_blue.png" align="middle" width="400px" />
+              <figcaption>sculpture.tif, blue channel</figcaption>
               
           </td>
           <td>
-              <img src="images/q5_diffuse.png" align="middle" width="400px" />
-              <figcaption>Diffuse component only</figcaption>
+              <img src="out/sculpture_canny.png" align="middle" width="400px" />
+              <figcaption>sculpture.tif, blue channel canny-edge filtered - sigma = 2</figcaption>
           </td>
         </tr>
+        
+      </table>
+    </div>
+  
+    <br>
+    <p>
+      Next, I implemented automatic color contrasting. For each channel, I would find the pixel of the lowest light intensity and treat it as 0 by subtracting its value from all of the pixels. 
+      To finish the normalization, I would find the pixel of brightest value and divide every pixel in the image by its value, thereby upperbounding the light intensity at 1. Now, each channel ranges
+      from 0 to 1, although the effect on alignment after canny edge filtering is negligible. 
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
         <tr align="center">
           <td>
-              <img src="images/q5_specular.png" align="middle" width="400px" />
-              <figcaption>Specular component only</figcaption>
-          </td>
+            <img src="out/vanilla_pyramid_sculpture.png" align="middle" width="400px" />
+            <figcaption>No Canny Edge Filtering + Structural Similarity Scoring, sculpture.tif - time = 12:46.48 minutes </figcaption>
+        </td>
+        <td>
+            <img src="out/layered_pyr_sculpture.png" align="middle" width="400px" />
+            <figcaption>Canny Edge Filtered + XOR scoring, sculpture.tif - time = 50.79s </figcaption>
+        </td>
+        </tr>
+        <tr align="center">
+          
+
           <td>
-              <img src="images/q5_allphong.png" align="middle" width="400px" />
-              <figcaption>Complete Blinn-Phong model</figcaption>
-          </td>
+            <img src="out/layered_pyr_sculpture.png" align="middle" width="400px" />
+            <figcaption>No Contrasting, sculpture.tif</figcaption>
+            
+        </td>
+        <td>
+            <img src="out/layered_pyr_contrasted_sculpture.png" align="middle" width="400px" />
+            <figcaption>Contrasted, sculpture.tif</figcaption>
+        </td>
+
         </tr>
       </table>
     </div>

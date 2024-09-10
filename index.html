@@ -15,7 +15,7 @@
     font-family: 'Source Sans Pro', sans-serif;
   }
 </style>
-<title>CS 180 Project 1</title>
+<title>cs180 portfolio</title>
 <meta http-equiv="content-type" content="text/html; charset=utf-8" />
 <link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
 </head>
@@ -24,178 +24,12 @@
 <body>
 
   <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
-  <h1 align="middle">Project 1: Images of the Russian Empire </h1>
-  <h2 align="middle"> Colorizing the Prokudin-Gorskii photo collection</h2>
-  <h3 align="middle"> Rohan Gulati</h2>
-
-  <br><br>
-
-  <div>
-    <h2 align="middle">Overview</h2>
-    <p>
-
-    In the early 1900s, Sergei Mikhailovich Prokudin-Gorskii foresaw color pictures and took stills using red, green, and blue color filters. In this project, I learned to develop multiple image processing techniques from scratch and get practice with image analysis libraries for the purpose of historical recreation from pictures captured over 100 years ago.
-    For preprocessing, I split the stacked files into red, green, and blue matrices, cutting off 10% of the image on all 4 sides for each channel. The three color channels of the image needed to be aligned, so I anchored the blue one and found displacements of the green and red channels relative to it. While a scan over all displacements would yield the optimal solution, this method would take significant amount of time, so I also included a pyramid scaling approach where I 
-    aligned downscaled pictures quickly to narrow down the region of interest in the fully-sized image before locating the optimal displacement. 
-    </p>
-    <p>
-    For each image, the displacement of the red and green color channels relative to the blue channel are displayed in (x,y). Additionally, the processing time for each image is displayed as well. 
-
-    </p>
-  </div>
-
-  <h2 align="middle"> Single-Scale Images</h2>
-
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_single_cathedral.jpg" align="middle" width="300vw" />
-            <figcaption> cathedral.jpg, red = (13, 12), green = (2, 5), time: 0.84s</figcaption>
-          </td>
-          <td>
-            <img src="out/layered_single_monastery.jpg" align="middle" width="300vw" />
-            <figcaption>monastery.jpg, red = (2, 3), green = (2, -3), time = 0.58s </figcaption>
-          </td>
-          <td>
-            <img src="out/layered_single_tobolsk.jpg" align="middle" width="300vw" />
-            <figcaption> tobolsk.jpg, red = (3, 6), green = (3, 3), time = 0.59s </figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div>
-    <p>
-      The first naive approach to aligning the channels was comparing every displacement within a [-15, 15] window on the x and y axes to find which displacement best aligned with the blue base layer using the numpy.roll() function. Since these images were roughly small and the true displacement was not
-      too far from (0,0), this method could produce quality results in a small amount of time. However, when the correct displacement is farther away from (0,0) or when the images are huge, the runtime can blow up quadratically. As a result, a new efficient method is necessary. 
-      
-    </p>
-
-  <h2 align="middle">Pyramid Scaling</h2>
-
-    <p>
-      To handle larger images with displacements between channels significantly far apart, I implemented a pyramid-scaling algorithm that downscales large images into a coarser resolution and locates the optimal displacement from the bottom-up. 
-      By downscaling to a small image, we can narrow down the region where the optimal displacement exists and only search a small window at each increasing level for it, until we find it for the level 0 image. This greatly sped up the time taken per-image, but it was still
-      taking around 12-14 minutes per large TIF. To further speed up the algorithm, I used Canny edge detection (skimage.feature.canny()) at each layer of the image pyramid. The pyramid algorithm worked the same, except the alignment at each layer used a 
-      filtered binary version of the color channel that isolated the edges within the image, although the downscaling was still done on the unfiltered image. Additionally, instead of computing the Euclidian Distance or phase correlation, I used an XOR on the binary Canny-edge matrices,
-      which greatly reduced the runtime to under a minute for most images.   
-    </p>
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_pyr_church.png" align="middle" width="300vw" />
-            <figcaption>church.tif, red = (-4, 58), green = (3, 25), time = 47.02s</figcaption>
-          </td>
-          <td>
-            <img src="out/layered_pyr_emir.png" align="middle" width="300vw" />
-            <figcaption>emir.tif, red = (40, 107), green = (23, 49), time = 47.4s</figcaption>
-          </td>
-          <td>
-            <img src="out/layered_pyr_harvesters.png" align="middle" width="300vw" />
-            <figcaption>harvesters.tif, red = (15, 123), green = (18, 60), time = 59.38s</figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div>
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_pyr_icon.png" align="middle" width="300vw" />
-            <figcaption>icon.tif, red = (22, 88), green = (16, 38), time = 1:00.81s </figcaption>
-          </td>
-          <td>
-            <img src="out/layered_pyr_lady.png" align="middle" width="300vw" />
-            <figcaption>lady.tif, red = (13, 120), green = (9, 57), 1:02.26s </figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div>
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_pyr_melons.png" align="middle" width="300vw" />
-            <figcaption>melons.tif, red = (14, 177), green = (9, 79), time = 1:01.7s</figcaption>
-          </td>
-          <td>
-            <img src="out/layered_pyr_onion_church.png" align="middle" width="300vw" />
-            <figcaption>onion_church.tif, red = (35, 108), green = (27, 51), time = 1:01.36s</figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div>
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_pyr_self_portrait.png" align="middle" width="300vw" />
-            <figcaption>self_portrait.tif, red = (37, 175), green = (29, 77), time = 1:08.5</figcaption>
-          </td>
-          <td>
-            <img src="out/layered_pyr_three_generations.png" align="middle" width="300vw" />
-            <figcaption>three_generations.tif, red = (8, 111), green = (12, 55), time = 59.43s </figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div><div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-            <img src="out/layered_pyr_train.png" align="middle" width="300vw" />
-            <figcaption>train.tif, red = (29, 85), green = (0, 40), time = 1:00.96s </figcaption>
-          </td>
-          <td>
-        </tr>
-      </table>
-    </div>
-
-
-
-
-
-
-  <h2 align="middle">Bells & Whistles</h2>
-
-
-
-    <p>
-      what the bells and whistles
-    </p>
-
-    <div align="middle">
-      <table style="width:100%">
-        <tr align="center">
-          <td>
-              <img src="images/q5_ambient.png" align="middle" width="400px" />
-              <figcaption>Ambient component only</figcaption>
-              
-          </td>
-          <td>
-              <img src="images/q5_diffuse.png" align="middle" width="400px" />
-              <figcaption>Diffuse component only</figcaption>
-          </td>
-        </tr>
-        <tr align="center">
-          <td>
-              <img src="images/q5_specular.png" align="middle" width="400px" />
-              <figcaption>Specular component only</figcaption>
-          </td>
-          <td>
-              <img src="images/q5_allphong.png" align="middle" width="400px" />
-              <figcaption>Complete Blinn-Phong model</figcaption>
-          </td>
-        </tr>
-      </table>
-    </div>
-
-    
-
-
+  
+  <h2 align="middle"> Rohan Gulati</h2>
+  
+  <a href = "proj1/index.html">
+  <h3 align="middle"> Project 1: Colorizing the Prokudin-Gorskii photo collection</h3>
+  </a>
+  
 </body>
 </html>
