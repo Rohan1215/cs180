@@ -1,0 +1,644 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 180 Project 2</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
+  <h1 align="middle">Project 2: Filters & Frequencies </h1>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
+
+  <br><br>
+
+  <div>
+    <h2 align="middle">Overview</h2>
+    <p>
+      In this project, I got to thoroughly consider images in frequency space rather than in pixel space and utilize filters to create many interesting effects and alterations to images.
+      Throughout the project, I utilized Gaussian blurring to remove or isolate the high frequencies of images, which helped with anti-aliasing, image sharpening, and merging multiple images
+      together. In part 1, I created an edge detector by computing the changes in pixel values horizontally and vertically, and computing the magnitude of these changes over the whole image. Incorporating
+      Gaussian blurring helped reduce the amount of noise in the image, and I got to see how filters could be efficiently convolved with each other and then applied on an image once, rather than individually applied 
+      on an image sequentially. In part 2.1, I implemented a way to sharpen images by isolating the high frequencies using a high-pass filter on an image, and then amplifying their frequencies in the result. 
+      In part 2.2, I implemented a way to create a visual illusion with two images such that they look different relative to where you see it from. By aligning and overlaying two similar images
+      where the first only includes low frequencies and the latter includes only high frequencies, you can create a result that looks like image 1 from far away and image 2 when you are close. 
+      In part 2.3 and 2.4, I created Gaussian and Laplacian stacks of various pairs of images with the goal of blending them together, given a particular mask. By breaking each pair of images down to their 
+      composite frequencies and merging them using a smooth interpolation filter between similar frequencies before collapsing it into an image, you can make a cleanly blended result like with an apple and an orange or 
+      maybe the Sun and a goat.
+    </p>
+    <br>
+    <p>
+      Overall, the most important thing I learned was the perspective of seeing images as composed of frequencies rather than pixels and how this can unlock doors to many new methods in image processing. 
+    </p>
+  </div>
+
+  <h2 align="middle"> 1.1: Finite Difference Operator</h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman.png" align="middle" width="325vw" />
+            <figcaption> Default Cameraman</figcaption>
+          </td>
+          <td>
+            <img src="out/cameraman_dx.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ dx filter </figcaption>
+          </td>
+          <td>
+            <img src="out/cameraman_dy.jpg" align="middle" width="325vw" />
+            <figcaption> Cameraman w/ dy filter </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman_edgemag.jpg" align="middle" width="325vw" />
+            <figcaption> Camerman w/ gradient magnitude off dx & dy filters</figcaption>
+          </td>
+          <td>
+            <img src="out/cameraman_bin.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ gradient magnitude - binarized (threshold = 60) </figcaption>
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To compute the gradient magnitude, I first applied dx and dy filters which are effectively computing the difference between every adjacent pair of adjacent pixels both 
+      vertically and horizontally. This is as granular as the partial derivatives can get. To compute the overall magnitude, I compute the L-2 norm of these two partial derivatives or
+      the square root of the sum of their squared values. 
+    </p>
+    
+  <h2 align="middle">1.2: Derivative of Gaussian (DoG) Filter</h2>
+
+    
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman_gauss.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ Gaussian Blurring</figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      After applying Gaussian blurring to the cameraman, we can see a lot of the details in the grass get removed. The lines and edges in the building become less distinct, and the details in the cameraman
+      become less pronounced as well. 
+    </p>
+    
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/dx_gauss.jpg" align="middle" width="325vw" />
+            <figcaption>Gaussian * dx filter</figcaption>
+          </td>
+          <td>
+            <img src="out/dy_gauss.jpg" align="middle" width="325vw" />
+            <figcaption>Gaussian * dy filter </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman_dog_dx.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ Gaussian * dx filter</figcaption>
+          </td>
+          <td>
+            <img src="out/cameraman_dog_dy.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ Gaussian * dy filter </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman_edgemaggauss.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ gaussian blurring and dx,dy filtering separately </figcaption>
+          </td>
+          <td>
+            <img src="out/cameraman_dog_mag.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ Single Gaussian derivative filter </figcaption>          
+        </tr>
+      </table>
+    </div>
+    <p>
+      Applying the Gaussian & the dx/dy filters on the cameraman individually produced the image on the left. Convolving the dx & dy filters with the Gaussian filter and applying it once 
+      on the cameraman produced the image on the right. These two images are equivalent numpy matrices, showing the associative property of convolution. These results are also similar although
+      more smooth than the results without the Gaussian blur. 
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cameraman_edgemaggaussbin.jpg" align="middle" width="325vw" />
+            <figcaption>Cameraman w/ Gaussian & Derivative Filter - Binarized (threshold = 12) </figcaption>
+          </td>
+                
+        </tr>
+      </table>
+    </div>
+
+
+  <h2 align="middle">Image Sharpening</h2>
+
+
+
+    <p>
+
+    </p>
+    <h3 align="middle">Taj Mahal</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/taj.jpg" align="middle" width="300vw" />
+            <figcaption> Original Taj Mahal</figcaption>
+          </td>
+          <td>
+            <img src="out/taj_blur.jpg" align="middle" width="325vw" />
+            <figcaption>Low Frequency Taj Mahal </figcaption>
+          </td>
+          <td>
+            <img src="out/taj_sharpened.jpg" align="middle" width="325vw" />
+            <figcaption> Restored Taj Mahal, alpha = 3 </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/taj_sequential.jpg" align="middle" width="800vw" />
+            <figcaption> Taj Mahal w/ various high-pass amplification</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+  
+    <br>
+    <p>
+      To sharpen these images, I first filtered out the high frequencies of the image by subtracting the Gaussian-blurred low frequency variation of the image 
+      from the original. Then, I applied a weight "alpha" to this difference and added it back to the blurred low frequency image to emphasize the higher frequency aspects of the image. 
+    </p>
+    <h3 align="middle">Panda</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/panda_original.jpg" align="middle" width="600vw" />
+            <figcaption> Original Panda </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/panda_blur.jpg" align="middle" width="600vw" />
+            <figcaption>Low Frequency Panda </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/panda_restored.jpg" align="middle" width="600vw" />
+            <figcaption> Restored Panda, alpha = 4 </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/panda_sequential.jpg" align="middle" width="900vw" />
+            <figcaption> Panda w/ various high-pass amplification</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h2 align="middle">2.2 Hybrid Images</h2>
+    <h3 align="middle">Derek & Nutmeg</h3>
+    <br>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/DerekPicture.jpg" align="middle" width="325vw" />
+            <figcaption> Derek</figcaption>
+          </td>
+          <td>
+            <img src="out/nutmeg.jpg" align="middle" width="325vw" />
+            <figcaption>Cat </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+  <p>
+    To create these illusions, I use a Gaussian filter to blur the background image and a high pass filter to isolate the high frequencies of the second image. 
+    This way, only the background image (Derek) is visible from far away, and when you are close, you can see the high frequency image (the cat). Below are more examples.
+  </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+              <img src="out/derekcat.jpg" align="middle" width="325vw" />
+              <figcaption> Derekcat </figcaption>        
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <h3 align="middle">Perry the Platypus </h3>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/perry.jpg" align="middle" width="600vw" />
+            <figcaption> Platypus</figcaption>
+          </td>
+          <td>
+            <img src="out/agentp.jpg" align="middle" width="325vw" />
+            <figcaption>Perry the Platypus </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/perryhybrid.jpg" align="middle" width="800vw" />
+            <figcaption> Agent P</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h3 align="middle">Blinking Guy</h3>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/blinker.jpg" align="middle" width="325vw" />
+            <figcaption>Eyes Opened</figcaption>
+          </td>
+          <td>
+            <img src="out/blinker2.jpg" align="middle" width="325vw" />
+            <figcaption>Eyes Closed</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/blinkerguy.jpg" align="middle" width="325vw" />
+            <figcaption> Blinking </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <h3 align="middle">Shrek & Donkey (Failure)</h3>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/shrek.jpeg" align="middle" width="325vw" />
+            <figcaption>Shrek</figcaption>
+          </td>
+          <td>
+            <img src="out/donkey.jpg" align="middle" width="325vw" />
+            <figcaption>Donkey</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/shrekdonkey.jpg" align="middle" width="325vw" />
+            <figcaption> Shrek + Donkey </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      While they had similar expressions, a simple alignment and frequency difference seemed to not be enough to create the same effect, because
+      the structures of the two images appear inherently different.  
+    </p>
+
+
+
+    <h3 align="middle">Wish You Were Here x Heroes & Villains (Favorite)</h3>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/wywh.jpg" align="middle" width="325vw" />
+            <figcaption> Wish You Were Here (1975) - Pink Floyd</figcaption>
+          </td>
+          <td>
+            <img src="out/metro.jpg" align="middle" width="325vw" />
+            <figcaption>Heroes & Villains (2022) - Metro Boomin</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/wywh_heroes.jpg" align="middle" width="600vw" />
+            <figcaption> Pink Floyd x Metro </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/wywh_heroes_normalized.jpg" align="middle" width="600vw" />
+            <figcaption> Pink Floyd x Metro (Normalized)</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/logmag_wywh.jpg" align="middle" width="325vw" />
+            <figcaption> Wish You Were Here Album Cover Frequency</figcaption>
+          </td>
+          <td>
+            <img src="out/logmag_metro.jpg" align="middle" width="325vw" />
+            <figcaption>Heroes & Villains Album Cover Frequency</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/logmag_low_pass_wywh.jpg" align="middle" width="325vw" />
+            <figcaption> Wish You Were Here Low-Pass Filtered Frequency</figcaption>
+          </td>
+          <td>
+            <img src="out/logmag_high_pass_metro.jpg" align="middle" width="325vw" />
+            <figcaption>Heroes & Villains High-Pass Filtered Frequency</figcaption>
+          </td>
+          <td>
+            <img src="out/logmag_hybrid.jpg" align="middle" width="325vw" />
+            <figcaption>Hybrid Image Frequency</figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+
+    <h2 align="middle">2.3 Gaussian and Laplacian Stacks</h2>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/gaussApple.jpg" align="middle" width="1000vw" />
+            <figcaption> Apple Gaussian Stack</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/lapApple.jpg" align="middle" width="1000vw" />
+            <figcaption>Apple Laplacian Stack</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/gaussOrange.jpg" align="middle" width="1000vw" />
+            <figcaption> Orange Gaussian Stack</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/lapOrange.jpg" align="middle" width="1000vw" />
+            <figcaption>Orange Laplacian Stack</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To create the Gaussian and Laplacian stacks, I iteratively applied Gaussian blurring for each new layer in the Gaussian stack in a particular image. 
+      Here, the first layer is just the original image. For the Laplacian stack, I took the difference between each Gaussian layer for each layer in the Laplacian stack, with the 
+      final image layer being the last layer of the Gaussian stack. This last layer holds all the low frequencies remaining that the blurring didn't remove. As a result,
+      upon collapsing the Laplacian stack, we are still left with the original image. 
+    </p>
+
+    <h3 align="middle">Szeliski Figure 3.42 Recreation</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/hybrd_342.jpg" align="middle" />
+            <figcaption></figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <h2 align="middle">2.4 Multi-resolution Blending</h2>
+
+    <h3 align="middle">Oraple</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/orange.jpeg" align="middle" width="325vw" />
+            <figcaption> Orange</figcaption>
+          </td>
+          <td>
+            <img src="out/apple.jpeg" align="middle" width="325vw" />
+            <figcaption>Apple </figcaption>
+          </td>
+          <td>
+            <img src="out/vertmask.jpg" align="middle" width="325vw" />
+            <figcaption>Mask </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/my_oraple.jpg" align="middle" width="325vw" />
+            <figcaption> Oraple </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h3 align="middle">Cheesy Moon</h3>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/moon.jpg" align="middle" width="325vw" />
+            <figcaption> Moon </figcaption>
+          </td>
+          <td>
+            <img src="out/swissshift.jpg" align="middle" width="325vw" />
+            <figcaption>Cheese </figcaption>
+          </td>
+          <td>
+            <img src="out/moonmask.jpg" align="middle" width="325vw" />
+            <figcaption>Mask </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/mooncheese.jpg" align="middle" width="600vw" />
+            <figcaption> Cheesy Moon </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h3 align="middle">My Glorious King</h3>
+    <br>
+    <br>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/mr_sunset.jpeg" align="middle" width="325vw" />
+            <figcaption> Sunset </figcaption>
+          </td>
+          <td>
+            <img src="out/mr_bron.jpeg" align="middle" width="325vw" />
+            <figcaption>Bron </figcaption>
+          </td>
+          <td>
+            <img src="out/mask.jpeg" align="middle" width="325vw" />
+            <figcaption>Mask </figcaption>
+          </td>
+
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pookie.jpg" align="middle" width="800vw" />
+            <figcaption> Pookie </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+</body>
+</html>
