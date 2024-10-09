@@ -1,0 +1,412 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 180 Project 3</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
+  <h1 align="middle">Project 3: Face Morphing </h1>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
+
+  <br><br>
+
+  <div>
+    <h2 align="middle">Overview</h2>
+    <p>
+ 
+    </p>
+    <br>
+    <p>
+      In this project, I learned how to reduce images down to their shapes, split them into triangles, and use matrix transformations to create complicated yet smooth morphs between different images. 
+      Before, we manipulated images using their pixel values or frequencies, but here, I got to see how the locations of the pixels can be manipulated with linear algebra, which unlocks the doors to many interesting
+      applications in image processing and computer vision. It was also cool to see how averaging many pictures together can create a smooth output and also how principal component analysis could naturally
+      identify and bring out features that I thought were only distinguishable and relevant to the human eye. 
+    </p>
+  </div>
+
+  <h2 align="middle"> 1: Defining Correspondences</h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/me_scaled_jesse.jpeg" align="middle" width="325vw" />
+            <figcaption> Rohan Gulati </figcaption>
+          </td>
+          <td>
+            <img src="out/jesse_scale.jpeg" align="middle" width="325vw" />
+            <figcaption> Jesse Pinkman </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/1_me_points.jpg" align="middle" width="325vw" />
+            <figcaption> Rohan Gulati + Correspondences</figcaption>
+          </td>
+          <td>
+            <img src="out/1_jesse_points.jpg" align="middle" width="325vw" />
+            <figcaption> Jesse Pinkman + Correspondences </figcaption>
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/1_me_delaunay.jpg" align="middle" width="325vw" />
+            <figcaption> Rohan Gulati + Delaunay</figcaption>
+          </td>
+          <td>
+            <img src="out/1_jesse_delaunay.jpg" align="middle" width="325vw" />
+            <figcaption> Jesse Pinkman + Delaunay </figcaption>
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To create correspondeces between myself and Jesse Pinkman, I first scaled both pictures such that they had the same resolution and aspect ratio, using Photoshop.
+      Afterwards, I used the correspondence tool to iteratively select key corresponding points on our faces as shown above. With these points, I used Scipy's Delaunay method 
+      to create a triangulation of these keypoints for each image. 
+    </p>
+    
+  <h2 align="middle">2: Computing the "Mid-Way Face"</h2>
+
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/me_scaled_jesse.jpeg" align="middle" width="325vw" />
+          <figcaption> Rohan Gulati</figcaption>
+        </td>
+        <td>
+          <img src="out/jesse_scale.jpeg" align="middle" width="325vw" />
+          <figcaption> Jesse Pinkman </figcaption>
+        </td>
+        
+      </tr>
+    </table>
+  </div>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/2_rohanpinkman.png" align="middle" width="325vw" />
+          <figcaption> Rohan Pinkman</figcaption>
+        </td>
+        
+        
+      </tr>
+    </table>
+  </div>
+
+  <p> 
+    With the key defining points of each shape, I could compute the midway face shape by taking the average coordinate of every pair of correspondences between me and Jesse Pinkman.
+    I would calculate the Delaunay triangulation of this midway face shape, and soon, there would be corresponding triangles across my face, Jesse Pinkman's face, and the midway face. 
+    I implemented a warp method that used matrix transformations to warp each triangle (and simultaneously all of the pixels inside) within my face's and Jesse Pinkman's triangulation 
+    into the respective triangle within midway face triangulation. To do this, I created two matrices of homogeneous coordinates of the three corners of the triangle for both the initial (A) 
+    and resulting triangle (B). One column would look like [x,y,1] for the x and y coordinates for that corner of that particular triangle. I wanted to compute the transformation matrix T such that 
+    T*A = B, so I could map any pixel or point within A to the respective point in B. After computing the inverse of A, T can be calculated as B*inv(A). Since I had a transformation T each of me and Jesse Pinkman 
+    to the midway shape for each triangle, I could also use inv(T) to find out which pixel on each source image would map to the current pixel in the midway face shape. 
+  </p>
+  <p>
+    Lastly, to calculate the value for every pixel in the midway shape, I would apply the respective transformation T's from its triangle in the midway shape to each triangle in the source image to find its associated pixel in the source image.
+    I would cross-dissolve the images by averainge the values of all of these corresponding source pixels and set this as the pixel value for the midway face.  
+  </p>
+
+    <h2 align="middle">3: The Morph Sequence</h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/jessenme_nobg.gif" align="middle" width="325vw" />
+            <figcaption> Rohan Pinkman</figcaption>
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+    <p>
+      With the previous part, I computed the midway face by weighting my face's pointset and pixel values by 0.5 and Jesse's pointset and pixel values by 0.5 and summing them together. Here, I create a gradual transition
+      between our faces by by interpolating these components instead with 45 discrete frames in between each image. Instead of using 0.5 and 0.5 for each image, I would use i/45 and (45-i)/45 for i from 0 to 45 
+      for my pointset and pixel values and Jesse's pointset and pixel values respectively, allowing for a smooth cross-dissolve and warping. Chaining these 46 frames together with 33ms in between, I created the GIF!  
+    </p>
+
+
+    <h2 align="middle">4: The "Mean Face" of a Population</h2>
+
+    <p>
+      The FEI face database is a Brazilian face database that contains photographs of 200 individuals taken at the Artificial Intelligence Laboratory of FEI in São Bernardo do Campo, São Paulo, Brazil. While this dataset includes
+      both neutral and smiling expressions of each individual, I chose to use the smiling subset for the below processing. 
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/4_average_fei_face.jpg" align="middle" width="500vw" />
+            <figcaption>Mean Smiling Face of FEI Dataset </figcaption>
+          </td> 
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To compute this mean face, like before, I computed the average shape of the correspondences across all 200 photographs. Next, for each pixel in the mean face, 
+      I averaged the corresponding pixel values across all of the 200 source images. 
+    </p>
+
+    
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/4_31_warped_into_avg.jpg" align="middle" width="325vw" />
+            <figcaption> Ex #1 to Mean Face Shape </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_77_warped_into_avg.jpg" align="middle" width="325vw" />
+            <figcaption> Ex #2 to Mean Face Shape </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_58_warped_into_avg.jpg" align="middle" width="325vw" />
+            <figcaption> Ex #3 to Mean Face Shape </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_29_warped_into_avg.jpg" align="middle" width="325vw" />
+            <figcaption> Ex #4 to Mean Face Shape </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_9_warped_into_avg.jpg" align="middle" width="325vw" />
+            <figcaption> Ex #5 to Mean Face Shape </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+    <br>
+    <br>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/4_me_warped_into_fei.jpg" align="middle" width="500vw" />
+            <figcaption> Me warped into FEI Mean Face </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To warp each image to the mean face, I found the Delaunay triangulation of the mean face, and used the aforementioned methods to warp each triangle in the individual's face 
+      to the corresponding triangle in the mean shape. 
+    </p>
+
+    <br>
+    <br>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/4_fei_warped_into_me.jpg" align="middle" width="500vw" />
+            <figcaption> FEI Mean Face warped into my face shape </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/4_avg_warped_into_31.jpg" align="middle" width="325vw" />
+            <figcaption> Mean Face Shape to Ex #1 </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_avg_warped_into_77.jpg" align="middle" width="325vw" />
+            <figcaption> Mean Face Shape to Ex #2  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_avg_warped_into_58.jpg" align="middle" width="325vw" />
+            <figcaption> Mean Face Shape to Ex #3  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_avg_warped_into_29.jpg" align="middle" width="325vw" />
+            <figcaption> Mean Face Shape to Ex #4  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/4_avg_warped_into_9.jpg" align="middle" width="325vw" />
+            <figcaption> Mean Face Shape to Ex #5  </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To warp the mean faces into the indivudal's shape, similar to before, I would calculate the Delaunay triangulation of the individual and apply the warping transformation 
+      to warp each pixel in the triangles of the mean face to the corresponding triangles in the individual's face triangulation. 
+    </p>
+
+
+    <h2 align="middle">5: Caricatures: Extrapolating from the mean</h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/5_extrapolated_caricatures.jpg" align="middle" width="800vw" />
+            <figcaption> Extrapolated Caricatures from FEI Mean Smiling Face </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      To compute my caricature using the mean FEI smiling face, I extrapolated my triangulation using the mean face. To do this, I found difference between the average face correspondences and mine and amplified / diminished this value with a parameter
+      alpha which ranged from -1 to 2, instead of the standard [0,1], before adding it to my own correspondences. Warping my picture to the exaggerated values of alpha produced some caricatures of me as 
+      shown above. 
+    </p>
+
+
+    <h2 align="middle">Bells & Whistles 1: Principal Component Analysis</h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/bw_fei_pca.jpg" align="middle" width="700vw" />
+            <figcaption>Principal Component Analysis of the FEI Dataset </figcaption>
+          </td> 
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      Each image was 300x250 in size, so unravelling this into a 75000 element long array represented the same information. After doing this for all 200 images, 
+      we are left with a 200 x 75000 element array. Using Sklearn's PCA method, I extracted the top 16 principal components and reshaped each of them back into 300 x 250 images 
+      as shown above. Each principal component in this basis can represent and carry different features in the image. 
+    </p>
+    <p>
+      Below, I roughly estimated what some of the principal components represented and amplified/diminished their presence in both the average & indivudal images to see 
+      how the image changed and if any features emerged or disappeared. 
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+
+        <tr align="center">
+          <td>
+            <img src="out/bw_hair_filter.jpg" align="middle" width="1000vw" />
+            <figcaption>Caricatures of Average Face with Principal Component 13: Facial Hair? </figcaption>
+          </td>
+                
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/bw_hair_filter_EX.jpg" align="middle" width="1000vw" />
+            <figcaption>Caricatures of an individual photograph with Principal Component 13: Facial Hair?  </figcaption>
+          </td>
+                
+        </tr>
+
+      </table>
+    </div>
+
+    <br>
+    <br>
+    <br>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/bw_happy_filter.jpg" align="middle" width="1000vw" />
+            <figcaption>Caricatures of Average Face with Principal Component 10: Light/Serious Smile? </figcaption>
+          </td>
+                
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/bw_happy_filter_EX.jpg" align="middle" width="1000vw" />
+            <figcaption> Caricatures of individual photograph with Principal Component 10: Light/Serious Smile?  </figcaption>
+          </td>
+                
+        </tr>
+      </table>
+    </div>
+
+    <h2 align="middle">Bells & Whistles 2: Music Video </h2>
+
+    <iframe width="560" height="315" align="middle" 
+    src="https://youtube.com/embed/YnXyHEYWaT4" 
+    title="YouTube video player" 
+    frameborder="0" 
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+    allowfullscreen>
+</iframe>
+
+  <p>
+    My friends and I also morphed our faces together and made a short music video. We just made sure to use the same correspondences and then applied the method from part 3. 
+  </p>
+
+
+</body>
+</html>
