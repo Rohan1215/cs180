@@ -38,9 +38,9 @@
     </p>
     <br>
     <p>
-      In this project, I learned how to reduce images down to their shapes, split them into triangles, and use matrix transformations to create complicated yet smooth morphs between different images. 
+      In this project, I learned how to simplify images geometrically, split them into triangles, and use matrix transformations to create complicated yet smooth morphs between different images. 
       Before, we manipulated images using their pixel values or frequencies, but here, I got to see how the locations of the pixels can be manipulated with linear algebra, which unlocks the doors to many interesting
-      applications in image processing and computer vision. It was also cool to see how averaging many pictures together can create a smooth output and also how principal component analysis could naturally
+      applications in image processing and computer vision. It was also cool to see how averaging many pictures together using their average shape across a dataset can create a smooth output and also how principal component analysis could naturally
       identify and bring out features that I thought were only distinguishable and relevant to the human eye. 
     </p>
   </div>
@@ -94,7 +94,7 @@
     </div>
 
     <p>
-      To create correspondeces between myself and Jesse Pinkman, I first scaled both pictures such that they had the same resolution and aspect ratio, using Photoshop.
+      To create correspondences between myself and Jesse Pinkman, I first scaled both pictures such that they had the same resolution and aspect ratio, using Photoshop.
       Afterwards, I used the correspondence tool to iteratively select key corresponding points on our faces as shown above. With these points, I used Scipy's Delaunay method 
       to create a triangulation of these keypoints for each image. 
     </p>
@@ -131,16 +131,15 @@
 
   <p> 
     With the key defining points of each shape, I could compute the midway face shape by taking the average coordinate of every pair of correspondences between me and Jesse Pinkman.
-    I would calculate the Delaunay triangulation of this midway face shape, and soon, there would be corresponding triangles across my face, Jesse Pinkman's face, and the midway face. 
-    I implemented a warp method that used matrix transformations to warp each triangle (and simultaneously all of the pixels inside) within my face's and Jesse Pinkman's triangulation 
-    into the respective triangle within midway face triangulation. To do this, I created two matrices of homogeneous coordinates of the three corners of the triangle for both the initial (A) 
+    I would calculate the Delaunay triangulation of this midway face shape, creating corresponding triangles across my face, Jesse Pinkman's face, and the midway face. 
+    I then implemented a warp method that used matrix transformations to warp each triangle (and simultaneously all of the pixels inside) within my face's and Jesse Pinkman's triangulation 
+    into the respective triangle within the midway face triangulation. To do this, I created two matrices of the homogeneous coordinates of the three corners of the triangle for both the initial (A) 
     and resulting triangle (B). One column would look like [x,y,1] for the x and y coordinates for that corner of that particular triangle. I wanted to compute the transformation matrix T such that 
-    T*A = B, so I could map any pixel or point within A to the respective point in B. After computing the inverse of A, T can be calculated as B*inv(A). Since I had a transformation T each of me and Jesse Pinkman 
-    to the midway shape for each triangle, I could also use inv(T) to find out which pixel on each source image would map to the current pixel in the midway face shape. 
+    T*A = B, so I could map any pixel or point within A to the respective point in B. After computing the inverse of A, T could be calculated as B*inv(A). Since I had a transformation 
+    to the midway shape for each triangle for both me and Jesse Pinkman, I could also use inv(T) to map any pixel in the midway shape to its source pixel in each source image. 
   </p>
   <p>
-    Lastly, to calculate the value for every pixel in the midway shape, I would apply the respective transformation T's from its triangle in the midway shape to each triangle in the source image to find its associated pixel in the source image.
-    I would cross-dissolve the images by averainge the values of all of these corresponding source pixels and set this as the pixel value for the midway face.  
+    Lastly, I would cross-dissolve the images by averaging the values of all of these corresponding source pixels and setting it as the pixel value for the midway face.  
   </p>
 
     <h2 align="middle">3: The Morph Sequence</h2>
@@ -157,8 +156,8 @@
       </table>
     </div>
     <p>
-      With the previous part, I computed the midway face by weighting my face's pointset and pixel values by 0.5 and Jesse's pointset and pixel values by 0.5 and summing them together. Here, I create a gradual transition
-      between our faces by by interpolating these components instead with 45 discrete frames in between each image. Instead of using 0.5 and 0.5 for each image, I would use i/45 and (45-i)/45 for i from 0 to 45 
+      In the previous part, I computed the midway face by weighting my face's pointset and pixel values by 0.5 and Jesse's pointset and pixel values by 0.5 and summing them together. Here, I create a gradual transition
+      between our faces by by interpolating these components instead with 45 discrete frames with different ratios of each image. Instead of using 0.5 and 0.5 for each image, I would use i/45 and (45-i)/45 for i from 0 to 45 
       for my pointset and pixel values and Jesse's pointset and pixel values respectively, allowing for a smooth cross-dissolve and warping. Chaining these 46 frames together with 33ms in between, I created the GIF!  
     </p>
 
@@ -300,8 +299,8 @@
     </div>
 
     <p>
-      To warp the mean faces into the indivudal's shape, similar to before, I would calculate the Delaunay triangulation of the individual and apply the warping transformation 
-      to warp each pixel in the triangles of the mean face to the corresponding triangles in the individual's face triangulation. 
+      To warp the mean faces into the individual's shape, similar to before, I would calculate the Delaunay triangulation of the individual and apply the warping transformation 
+      to warp each pixel in the triangles of the mean face to the corresponding triangles in the individual's face. 
     </p>
 
 
@@ -340,12 +339,12 @@
 
     <p>
       Each image was 300x250 in size, so unravelling this into a 75000 element long array represented the same information. After doing this for all 200 images, 
-      we are left with a 200 x 75000 element array. Using Sklearn's PCA method, I extracted the top 16 principal components and reshaped each of them back into 300 x 250 images 
-      as shown above. Each principal component in this basis can represent and carry different features in the image. 
+      we are left with a 200 x 75000 matrix. Using Sklearn's PCA method, I extracted the top 16 principal components and reshaped each of them back into 300 x 250 images 
+      as shown above. Each principal component in this basis can represent different features in the image. 
     </p>
     <p>
-      Below, I roughly estimated what some of the principal components represented and amplified/diminished their presence in both the average & indivudal images to see 
-      how the image changed and if any features emerged or disappeared. 
+      Below, I roughly estimated what some of the principal components represented and amplified/diminished their presence in both the average & individual images to see 
+      how they changed and if any features emerged or disappeared. 
     </p>
 
     <div align="middle">
@@ -355,14 +354,14 @@
         <tr align="center">
           <td>
             <img src="out/bw_hair_filter.jpg" align="middle" width="1000vw" />
-            <figcaption>Caricatures of Average Face with Principal Component 13: Facial Hair? </figcaption>
+            <figcaption>Caricatures of Average Face with Principal Component 6: Facial Hair? </figcaption>
           </td>
                 
         </tr>
         <tr align="center">
           <td>
             <img src="out/bw_hair_filter_EX.jpg" align="middle" width="1000vw" />
-            <figcaption>Caricatures of an individual photograph with Principal Component 13: Facial Hair?  </figcaption>
+            <figcaption>Caricatures of an individual photograph with Principal Component 6: Facial Hair?  </figcaption>
           </td>
                 
         </tr>
