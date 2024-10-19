@@ -1,0 +1,504 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 180 Project 4</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
+  <h1 align="middle">Project 4: Image Warping & Mosaicing </h1>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
+
+  <br><br>
+
+  <div>
+
+
+  </div>
+
+  <h3 align="middle"> Computing Homographies</h3>
+  <p>
+    In this project, we blend pictures of scenes taken from a rotating camera's axis. In order to this, we use a select few correspondences to warp one picture onto another serially, which in this case requires 8 degrees of freedom per transformation, as Affine transformations of 6 degrees of freedom 
+    can't capture the perspective differences between the images. In short, we want to compute 
+  </p>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq1.svg" align="middle" width="100vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <p>
+  Where T is our transformation matrix and A & B are matrices of homogeneous coordinates. The matrix may scale our B values by a certain factor (w) per point, but we'll always be computing 
+  this w value simultaneously allowing us to get the true x' and y' for any given input. 
+
+  Breaking this down, we get: 
+  </p>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq2.svg" align="middle" width="350vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+  <br>
+  Breaking down one pair of correspondences, we get: 
+  <br>
+  <br>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq3.svg" align="middle" width="350vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq4.svg" align="middle" width="600vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq5.svg" align="middle" width="600vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq6.svg" align="middle" width="650vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+  <p>
+    Rewriting these equations in matrix form, we get: 
+  </p>
+  <br>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq7.svg" align="middle" width="350vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+  <p>
+    Doing this for all n coordinates, we get a 2n x 9 matrix M and we want to compute the vector v (a flattened T) such that Mv ~ 0
+  </p>
+  <br>
+  <br>
+  <br>
+  <br>
+
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq8.svg" align="middle" width="350vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq9.svg" align="middle" width="100vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+  <p>
+  </p>
+  <p>
+    While zero might not always be achievable, we can still minimize this as much as possible using the matrix's singular value decomposition. The V matrix contains a series of singular vectors 
+    that each correspond to a singular value within the diagonal Sigma matrix, which are sorted in decreasing order of magnitude. Since the V matrix is orthonormal, multiplying it again by any of its vectors will 
+    zero out the other vectors, isolating the chosen singular vector and thus also the associated singular value. 
+  </p>
+  <p>
+    By choosing the last singular vector to be our vector v, we can effectively choose our error to be this last singular value, which is the minimum error achievable and in the examples below, kinda negligible. Intuitively, this last singular vector is also the direction M scales the most slowly in, so 
+    a vector along this direction would be a good minimizer. To compute this, I used Numpy's <code> np.linalg.svd() </code> on M, which returns the U,Σ, and V (transposed) matrices. Lastly, I'd extract the last row of V and reshape this into the 3x3 matrix, T. 
+  </p>
+  <p>  
+  Since the magnitude of T would only change 
+    the w values in the B matrix, we can scale it by any factor and maintain the same ability to compute x' and y'. For example, we can divide the matrix T by the last element "i", anchoring it to 1, resulting in 8 degrees of freedom for perspective warping. 
+  </p>
+
+  <p>
+    Now we can go back and forth between A & B, using T and its inverse. 
+  </p>
+  <br>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq1.svg" align="middle" width="100vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/eq10.svg" align="middle" width="120vw" />
+        </td>
+        <td>
+      </tr>
+    </table>
+  </div>
+  <br>
+  <br>
+
+
+
+
+  <h1 align="middle"> Rectification </h1>
+    <p>
+      We can see if the warping worked by warping them so they are normal to us. I selected corners on the rectangles of interest (A) and then corresponding rectangular points (B) like [0, 0], [1500, 0], [0, 1500], [10, 1500] for a square 
+      or with a longer dimension for a rectangle. After computing a transformation T from A to B, I iterated through the pixels within the parallel B rectangle and applied the inverse of T on each coordinate to find its pixel in the warped A rectangle.
+      Since this usually landed between pixels, I would use bilinear interpolation using its position relative to surrounding pixels for its final value in the parallel B rectangle. 
+
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/gameday.jpg" align="middle" width="325vw" />
+            <figcaption> Memorial Stadium </figcaption>
+          </td>
+          <td>
+            <img src="out/gamedayglade.jpg" align="middle" width="325vw" />
+            <figcaption> Gameday @ the Glade </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/memorial_stadium_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Memorial Stadium Correspondences </figcaption>
+          </td>
+          <td>
+            <img src="out/glade_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Glade Correspondences </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/memorial_stadium_rect.jpg" align="middle" width="360vw" />
+            <figcaption> Memorial Stadium Field </figcaption>
+          </td>
+          <td>
+            <img src="out/glade_rect.jpg" align="middle" width="360vw" />
+            <figcaption> Home Depot  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h1>Mosaicing </h1>
+    <p>
+      For mosaicing, I would select at least 8 correspondences per image and then compute the transformation T between them. 
+      Then, I would warp the left image into the "space" of the right image, which would remain flat. 
+      Since I didn't know how big my canvas would have to be to contain both images, I warped the corners of the left image to create a silhouette in the right space. 
+      My canvas here would just be bounded by the max and min of the corners of both the right image and the left's silhouette. 
+    </p>
+    <p>
+      Then, same as before with rectification, I would go through the pixels within this silhouette and apply the inverse transform on each pixel to find where in the left image they 
+      came from. 
+    </p>
+
+    <p>
+      Once they are layered on top of each other correctly, I would use a gradient mask and a Laplacian pyramid of the mask and the two images to blend them together.
+      The mask would increase from 0 to 1 along the x-axis and and also be centered at the overlap of the two images, creating a smooth transition from one to another. 
+    </p>
+    <h2 align="middle"> Mosaic 1: Rooftop </h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftopL.jpg" align="middle" width="340vw" />
+            <figcaption> Left </figcaption>
+          </td>
+          <td>
+            <img src="out/rooftopR.jpg" align="middle" width="340vw" />
+            <figcaption> Right </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftop_left_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Left Correspondences </figcaption>
+          </td>
+          <td>
+            <img src="out/rooftop_right_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Right Correspondences </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftop_L_warped.jpg" align="middle" width="360vw" />
+            <figcaption> Left in "Right Space" </figcaption>
+          </td>
+          <td>
+            <img src="out/rooftop_R_space.jpg" align="middle" width="360vw" />
+            <figcaption> Right in "Right Space" </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftop_mosaic_noblend.jpg" align="middle" width="800vw" />
+            <figcaption> Mosaic (No Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftop_mosaic.jpg" align="middle" width="800vw" />
+            <figcaption> Mosaic (Feathered Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+
+    <h2 align="middle"> Mosaic 2: Near Giannini Hall </h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cnrL.jpg" align="middle" width="340vw" />
+            <figcaption> Left </figcaption>
+          </td>
+          <td>
+            <img src="out/cnrR.jpg" align="middle" width="340vw" />
+            <figcaption> Right </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cnr_left_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Left Correspondences </figcaption>
+          </td>
+          <td>
+            <img src="out/cnr_right_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Right Correspondences </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cnr_L_warped.jpg" align="middle" width="360vw" />
+            <figcaption> Left in "Right Space" </figcaption>
+          </td>
+          <td>
+            <img src="out/cnr_R_space.jpg" align="middle" width="360vw" />
+            <figcaption> Right in "Right Space" </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cnr_mosaic_noblend.jpg" align="middle" width="800vw" />
+            <figcaption> Mosaic (No Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/cnr_mosaic.jpg" align="middle" width="800vw" />
+            <figcaption> Mosaic (Feathered Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+
+    <h2 align="middle"> Mosaic 3: Sunset State Beach </h2>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/beachL.PNG" align="middle" width="340vw" />
+            <figcaption> Left </figcaption>
+          </td>
+          <td>
+            <img src="out/beachR.PNG" align="middle" width="340vw" />
+            <figcaption> Right </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/beach_left_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Left Correspondences </figcaption>
+          </td>
+          <td>
+            <img src="out/beach_right_corr.jpg" align="middle" width="360vw" />
+            <figcaption> Right Correspondences </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/beach_L_warped.jpg" align="middle" width="360vw" />
+            <figcaption> Left in "Right Space" </figcaption>
+          </td>
+          <td>
+            <img src="out/beach_R_space.jpg" align="middle" width="360vw" />
+            <figcaption> Right in "Right Space" </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/beach_mosaic_noblend.jpg" align="middle" width="500vw" />
+            <figcaption> Mosaic (No Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/beach_mosaic.jpg" align="middle" width="500vw" />
+            <figcaption> Mosaic (Feathered Blending) </figcaption>
+          </td>
+  
+        </tr>
+      </table>
+    </div>
+
+
+</body>
+</html>
