@@ -24,7 +24,7 @@
 <body>
 
   <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
-  <h1 align="middle">Project 4: Image Warping & Mosaicing </h1>
+  <h1 align="middle">Project 4: Mosaicing & Auto-Stitching </h1>
   <h2 align="middle"> Rohan Gulati </h2>
   <h3 align="middle">SID: 3037864000 </h3>
 
@@ -38,7 +38,7 @@
 
   <h3 align="middle"> Computing Homographies</h3>
   <p>
-    In this project, we blend pictures of scenes taken from a rotating camera's axis. In order to this, we use a select few correspondences to warp one picture onto another serially, which in this case requires 8 degrees of freedom per transformation, as Affine transformations of 6 degrees of freedom 
+    In this project, we blend pictures of scenes taken from a rotating camera's axis. In order to this, we use a select few correspondences to warp one scene onto another, which in this case requires 8 degrees of freedom per transformation, as Affine transformations of 6 degrees of freedom 
     can't capture the perspective differences between the images. In short, we want to compute 
   </p>
   <div align="middle">
@@ -53,7 +53,7 @@
   </div>
   <br>
   <p>
-  Where T is our transformation matrix and A & B are matrices of homogeneous coordinates. The matrix may scale our B values by a certain factor (w) per point, but we'll always be computing 
+  where T is our transformation matrix and A & B are matrices of homogeneous coordinates. The matrix scales our B values by a certain factor (w) per point due to their varying distances from the camera, but we'll always be computing 
   this w value simultaneously allowing us to get the true x' and y' for any given input. 
 
   Breaking this down, we get: 
@@ -222,7 +222,7 @@
 
   <h1 align="middle"> Rectification </h1>
     <p>
-      We can see if the warping worked by warping them so they are normal to us. I selected corners on the rectangles of interest (A) and then corresponding rectangular points (B) like [0, 0], [1500, 0], [0, 1500], [10, 1500] for a square 
+      We can see if the warping worked by warping them so they are normal to us. I selected corners on the rectangles of interest (A) and then corresponding rectangular points (B) like [0, 0], [1500, 0], [0, 1500], [1500, 1500] for a square 
       or with a longer dimension for a rectangle. After computing a transformation T from A to B, I iterated through the pixels within the parallel B rectangle and applied the inverse of T on each coordinate to find its pixel in the warped A rectangle.
       Since this usually landed between pixels, I would use bilinear interpolation using its position relative to surrounding pixels for its final value in the parallel B rectangle. 
 
@@ -498,6 +498,454 @@
         </tr>
       </table>
     </div>
+
+
+
+
+    <h1> Auto Stitching </h1>
+    <p>
+      Here, we recreate methods from <a href="https://www.microsoft.com/en-us/research/wp-content/uploads/2004/12/tr-2004-133.pdf"> "Multi-Image Matching using Multi-Scale Oriented Patches” by Brown et al.</a>, in order to detect corresponding points between images and compute their best homography automatically, so 
+      images can be stitched automatically as well. Below are the examples this method is tested on. As a note, the rooftop, VLSB, and dino images were downsampled using 3x3 or 4x4 blocks 
+      to keep the runtime of the Harris detection algorithm low. Also, the VLSB photo in particular was taken with a long exposure setting to capture details in the 
+      setting at night. 
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/rooftopL.jpg" align="middle" width="500vw" />
+            <figcaption> Rooftop Left </figcaption>
+          </td>
+          <td>
+            <img src="out/rooftopR.jpg" align="middle" width="500vw" />
+            <figcaption> Rooftop Right </figcaption>
+          </td>
+          <td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/beachL.PNG" align="middle" width="300vw" />
+            <figcaption> Beach Left </figcaption>
+          </td>
+          <td>
+            <img src="out/beachR.PNG" align="middle" width="300vw" />
+            <figcaption> Beach Right </figcaption>
+          </td>
+          <td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/vlsb_left.png" align="middle" width="500vw" />
+            <figcaption> VLSB Left </figcaption>
+          </td>
+          <td>
+            <img src="out/vlsb_right.png" align="middle" width="500vw" />
+            <figcaption> VLSB Right </figcaption>
+          </td>
+          <td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/trexM.png" align="middle" width="500vw" />
+            <figcaption> Dino Top </figcaption>
+          </td>
+          <td>
+            <img src="out/trexB.png" align="middle" width="500vw" />
+            <figcaption> Dino Bottom </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h2>Harris Corner Detection</h2>
+    <p>
+      To locate good candidates for correspondences, we first use the Harris point detector, which finds points on the images with a high Harris corner strength. The initial set of generated 
+      corners are shown below. 
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_harris.jpg" align="middle" width="800vw" />
+            <figcaption> Rooftop - Harris Corner Detection Output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_harris.jpg" align="middle" width="800vw" />
+            <figcaption> Beach - Harris Corner Detection Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_harris.jpg" align="middle" width="800vw" />
+            <figcaption> VLSB - Harris Corner Detection Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_trex_harris.jpg" align="middle" width="800vw" />
+            <figcaption> Dino - Harris Corner Detection Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h2> Adaptive Non-Maximal Suppression</h2>
+    <p>
+      Since there are many potential points generated above, we want to reduce our set of candidate points while also keeping our points distributed evenly over the image. 
+      This is because more spread out points better capture the perspective differences between the images, leading to better warping. In order to compute this, we 
+      want to find the points that are local maximums using their Harris Corner strength. 
+    </p>
+    <p>
+      To do this, for each point i, we compute r<sub>i</sub>, which indicates the distance to the closest point that 
+      has a significantly larger corner strength than i, using a threshold c_robust, set to 0.9. In code, we first filter all points j such that h[j] * c_robust > h[i]. Then, among these, 
+      we compute the L1-norm or Manhattan distance between the remaining points j and i, and set r<sub>i</sub> to the minimum result. After sorting all of the points by their r values, 
+      we settle on the 500 points with the highest r values per image, representing the 500 points that had a relatively higher corner strength than the other corners in the area. The top 500
+      for each image are shown below. 
+    </p>
+    <br>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_anms.jpg" align="middle" width="700vw" />
+            <figcaption> Rooftop - ANMS Output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_anms.jpg" align="middle" width="700vw" />
+            <figcaption> Beach - ANMS Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_anms.jpg" align="middle" width="700vw" />
+            <figcaption> VLSB - ANMS Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_anms.jpg" align="middle" width="700vw" />
+            <figcaption> Dino - ANMS Output  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h2>Feature Description Extraction & Matching (Steps 2 & 3)</h2>
+    <p>
+      To extract the features per image, I used numpy slicing to capture the 80 x 80 pixel window about a pixel and then downsampled every 2 pixels per row and column (instead of 
+      the 40x40 window & every 5 pixel sampling as mentioned in the paper, since the runtime difference was negligible and this provided more information). This looked like 
+      <code>im[y-40:y:+40:2,x-40:x+40:2]</code>
+    </p>
+    <p>
+      Next to match the points in image A with points in image B, I would use Lowe's ratio, which for a point in A, compares the differences in the closest match in B with the second closest match in B. 
+      Algorithmically, for each point & patch pair i in A, I would iterate through all of the points & respective patches j in B, keeping track of the points j<sub>1</sub> and j<sub>2</sub>  
+      whose patches had the least and second-least l2-norms (e<sub>1-NN</sub> and e<sub>2-NN</sub>) respectively when subtracted from the i'th patch. The idea is that perfect correspondences would have a close match with j<sub>1</sub> indicated by a low
+      e<sub>1-NN</sub> value while a relatively poor match with j_<sub>2</sub>, indicated by a higher e<sub>2-NN</sub> value. Thus, points with the lowest (ha) Lowe Threshold, e<sub>1-NN</sub> / e<sub>2-NN</sub>, would 
+      be the best correspondences.  
+    </p>
+    <p>
+      The distribution in the Lowe Threshold is shown per pair of images (points in the left image were matched with the closest in the right). I used this graph to choose the number of points to include in RANSAC.
+      Additionally, the 20 correspondences with the lowest Lowe ratios are shown with lines drawn in between them, and the patches of the lowest 10 are displayed as well.
+      
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_lowe.jpg" align="middle" width="250vw" />
+            <figcaption> Rooftop - Lowe Distribution </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_featurematching.jpg" align="middle" width="500vw" />
+            <figcaption> Rooftop - Feature Matched </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_patches.jpg" align="middle" width="800vw" />
+            <figcaption> Rooftop - Closest 10 patches output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_lowe.jpg" align="middle" width="250vw" />
+            <figcaption> Beach - Lowe Distribution </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_featurematching.jpg" align="middle" width="500vw" />
+            <figcaption> Beach - Feature Matched </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_patches.jpg" align="middle" width="800vw" />
+            <figcaption> Beach - Closest 10 patches output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_lowe.jpg" align="middle" width="250vw" />
+            <figcaption> VLSB - Lowe Distribution </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_featurematching.jpg" align="middle" width="500vw" />
+            <figcaption> VLSB - Feature Matched </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_patches.jpg" align="middle" width="800vw" />
+            <figcaption> VLSB - Closest 10 patches output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_lowe.jpg" align="middle" width="250vw" />
+            <figcaption> Dino - Lowe Distribution </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_featurematching.jpg" align="middle" width="500vw" />
+            <figcaption> Dino - Feature Matched </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_patches.jpg" align="middle" width="800vw" />
+            <figcaption> Dino - Closest 10 patches output </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    
+    <h2>RANSAC-based robust homography</h2>
+    <p>
+      Now that we have our correspondences, we look for the best 4 correspondences (8 equations) between A and B that can create our homographic transformations, using RANSAC. This algorithm filters our set of correspondences S by randomly selecting 4 correspondences every iteration, computing the homography, and applying it to all of the correspondences.
+      If applying the homography on a point in A leads to an output that is far from the respective point in B (given a threshold), we discard this outlier point and then reduce our set of correspondences. 
+      At the end, once our set of remaining "inliers" is small, we compute our homographic transformation using these remaining correspondences. 
+    </p>
+    <p>
+      Since the RANSAC algorithm chooses the initial set of correspondences randomly and is narrowed down from there, the resulting warp may not be representative of the true transformation at times. 
+      To handle such random errors, I included a couple changes. First, I used the above Lowe Distribution graphs to find a sufficient amount of the best correspondences to include in the initial set while keeping their max Lowe ratio low. 
+      This is because if the RANSAC algorithm was applied on the entire set, including the points with high Lowe thresholds, this would treat poorly matched points in A and B as correspondences, which would 
+      lead to inaccurate results. 
+    </p>
+    <p>  
+      Next, I experimented with a threshold decay, so as the RANSAC algorithm iterated and reduced the set of inliers that had similar homographies, I made the threshold stricter 
+      over time to have RANSAC choose the best inliers over time. This seemed to increase the frequency of arriving at a successful warp. As a note, setting the decay to 1 just let the initial RANSAC algorithm proceed, 
+      without any decay. Below are the homographies of the left image layered with the right after RANSAC. 
+
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_warped.jpg" align="middle" width="600vw" />
+            <figcaption> Rooftop - Auto Warping (No Blending) </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_warped.jpg" align="middle" width="600vw" />
+            <figcaption> Beach - Auto Warping (No Blending)  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_warped.jpg" align="middle" width="600vw" />
+            <figcaption> VLSB - Auto Warping (No Blending)  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_warped.jpg" align="middle" width="600vw" />
+            <figcaption> Dino - Auto Warping (No Blending)  </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h2> Mosaicing</h2>
+    <p>
+      I used the same feathering approach to blend the images together as I did with the manual stitching method.
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_rooftop_mosaic.jpg" align="middle" width="500vw" />
+            <figcaption>Rooftop - Auto Stitched Mosaic </figcaption>
+          </td>
+          <td>
+            <img src="out/rooftop_mosaic.jpg" align="middle" width="500vw" />
+            <figcaption> Rooftop - Manually Stitched Mosaic </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_beach_mosaic.jpg" align="middle" width="500vw" />
+            <figcaption>Beach - Auto Stitched Mosaic </figcaption>
+          </td>
+          <td>
+            <img src="out/beach_mosaic.jpg" align="middle" width="500vw" />
+            <figcaption> Beach - Manually Stitched Mosaic </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      The different exposures in the left and right images seem to have caused a visible distinction between the left and right sides, leading to more of a flawed yet interesting stitch. 
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_vlsb_mosaic.jpg" align="middle" width="700vw" />
+            <figcaption>VLSB - Auto Stitched Mosaic </figcaption>
+          </td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/auto_dino_mosaic.png" align="middle" width="700vw" />
+            <figcaption> Dino - Auto Stitched Mosaic </figcaption>
+          </td>
+          <td>
+          <td>
+        </tr>
+      </table>
+    </div>
+    <h2>Reflection</h2>
+    <p>
+      It was cool to see how useful linear algebra was for graphics and vision, and deriving a formula and implementing it for a case like stitching my own 
+      custom photos together was pretty nice. For auto-stitching, reading through and recreating the methods of a research paper felt rewarding as well, 
+      especially when I could condense the entire stitching process into an automatic recipe where you could feed sets of pictures on one end 
+      for them to come out stitched on the other (without having to manually click on correspondences and check if they were placed and paired correctly). 
+    </p>
 
 
 </body>
