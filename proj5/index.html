@@ -42,25 +42,66 @@
   <h1 align="middle"> Part A: Denoising Abilities of DeepFloyd IF </h1>
 
     <h3>Prompt Model outputs</h3>
+    <h4>Num Inference = 10</h4>
     <div align="middle">
       <table style="width:100%">
         <tr align="center">
           <td>
-            <img src="out/precomp_oilpainting.jpg" align="middle" width="125vw" />
+            <img src="out/oil_10.jpg" align="middle" width="125vw" />
             <figcaption> Prompt 1: an oil painting of a snowy mountain village</figcaption>
           </td>
           <td>
-            <img src="out/precomp_rocketship.jpg" align="middle" width="125vw" />
+            <img src="out/rocketship_10.jpg" align="middle" width="125vw" />
             <figcaption> Prompt 2: a photo of a rocket ship </figcaption>
           </td>
           <td>
-            <img src="out/precomp_manwhat.jpg" align="middle" width="125vw" />
+            <img src="out/manwhat_10.jpg" align="middle" width="125vw" />
             <figcaption> Prompt 3: a man wearing a hat </figcaption>
           </td>
         </tr>
       </table>
     </div>
-    <p>Example outputs of prompts with calculated vector embeddings</p>
+    <h4>Num Inference = 20</h4>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/snow_20.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 1: an oil painting of a snowy mountain village</figcaption>
+          </td>
+          <td>
+            <img src="out/rocket_20.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 2: a photo of a rocket ship </figcaption>
+          </td>
+          <td>
+            <img src="out/manwhat_20.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 3: a man wearing a hat </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <h4>Num Inference = 40</h4>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/snow_50.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 1: an oil painting of a snowy mountain village</figcaption>
+          </td>
+          <td>
+            <img src="out/rocket_50.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 2: a photo of a rocket ship </figcaption>
+          </td>
+          <td>
+            <img src="out/manhat_50.png" align="middle" width="125vw" />
+            <figcaption> Prompt 3: a man wearing a hat </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>When we vary the number of inference steps, we can see a difference in quality in the outputs. Higher values of inference iterations led to 
+      more detailed realistic textures, while lower number of steps led to more smooth cartoon-like features. 
+    </p>
 
     <h3>Forward Process - Noising</h3>
     <div align="middle">
