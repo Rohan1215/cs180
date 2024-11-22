@@ -1,0 +1,625 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h3, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 180 Project 4</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
+  <h1 align="middle">Project 5: Diffusion </h1>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
+
+  <p>
+    In this project, we implement diffusion using deep learning in PyTorch. First, we implement many interesting 
+    methods to sample from the set of real images using Stability AI's <a href = "https://huggingface.co/docs/diffusers/en/api/pipelines/deepfloyd_if">Deep Floyd IF</a> model. 
+    This includes inpainting, image to image translation, and the generation of new images altogether. In part B,
+    we train a UNet architecture from scratch to generate automatic handwritten numbers from the MNIST dataset. 
+  </p>
+ 
+
+
+
+  <h1 align="middle"> Part A: Denoising Abilities of DeepFloyd IF </h1>
+
+    <h3>Prompt Model outputs</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/precomp_oilpainting.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 1: an oil painting of a snowy mountain village</figcaption>
+          </td>
+          <td>
+            <img src="out/precomp_rocketship.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 2: a photo of a rocket ship </figcaption>
+          </td>
+          <td>
+            <img src="out/precomp_manwhat.jpg" align="middle" width="125vw" />
+            <figcaption> Prompt 3: a man wearing a hat </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Example outputs of prompts with calculated vector embeddings</p>
+
+    <h3>Forward Process - Noising</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/noise250.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 250 </figcaption>
+          </td>
+          <td>
+            <img src="out/noise500.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 500 </figcaption>
+          </td>
+          <td>
+            <img src="out/noise750.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 750</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Here we apply somewhat of linear combination of random noise and the original image to noise the images. Above are shown at different noise levels</p>
+
+    <h3>Classical Gaussian Denoising</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/noise250.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 250 </figcaption>
+          </td>
+          <td>
+            <img src="out/gauss250.png" align="middle" width="125vw" />
+            <figcaption> Noise Level: 250, Denoised </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/noise500.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 500 </figcaption>
+          </td>
+          <td>
+            <img src="out/guass500.png" align="middle" width="125vw" />
+            <figcaption> Noise Level: 500, Denoised </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/noise750.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 750 </figcaption>
+          </td>
+          <td>
+            <img src="out/gauss750.png" align="middle" width="125vw" />
+            <figcaption> Noise Level: 750, Denoised </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Here we appllied low pass filtering to isolate lower frequencies of the image</p>
+
+    <h3>One Step Denoising</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt_13_onestep_denoise.jpg" align="middle" width="600vw" />
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+    <p>Here we used DeepFloyd IF to find the noise and derived a formula to remove it from the noisy image and guess the clean image</p>
+    <h3>Iterative Denoising</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/iterative_690.jpg" align="middle" width="125vw" />
+            <figcaption> Time step: 690 </figcaption>
+          </td>
+          <td>
+            <img src="out/iterative_540.jpg" align="middle" width="125vw" />
+            <figcaption> Time step: 540 </figcaption>
+          </td>
+          <td>
+            <img src="out/iterative_390.jpg" align="middle" width="125vw" />
+            <figcaption> Time step: 390 </figcaption>
+          </td>
+          <td>
+            <img src="out/iterative_240.jpg" align="middle" width="125vw" />
+            <figcaption> Time step: 240 </figcaption>
+          </td>
+          <td>
+            <img src="out/iterative_90.jpg" align="middle" width="125vw" />
+            <figcaption> Noise Level: 90 </figcaption>
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+    <p>
+      Here we applied the DDPM Diffusion process to iteratively denoise the image slightly over many timesteps.
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/original_campanile.png" align="middle" width="125vw" />
+            <figcaption> Original Campanile </figcaption>
+          </td>          
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt14_gaussian_and_one_step_comparison.jpg" align="middle" width="400vw" />
+            <figcaption> One Step & Gaussian Denoising Comparison </figcaption>
+          </td>          
+        </tr>
+      </table>
+    </div>
+    <h3>Diffusion Sampling</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt_15_0.jpg" align="middle" width="125vw" />
+          </td>
+          <td>
+            <img src="out/pt_15_1.jpg" align="middle" width="125vw" />
+          </td>
+          <td>
+            <img src="out/pt_15_2.jpg" align="middle" width="125vw" />
+          </td>
+          <td>
+            <img src="out/pt_15_3.jpg" align="middle" width="125vw" />
+          </td>
+          <td>
+            <img src="out/pt_15_4.jpg" align="middle" width="125vw" />
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p> Above are example images from the default DDPM. We can see the images are pretty arbitrary and can have better quality.</p>
+    <h3>Classifier Free Guidance</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt_16_cfg_5.jpg" align="middle" width="600vw" />
+          </td>
+          
+        </tr>
+      </table>
+    </div>
+    <p>We applied Classifier Free Guidance, which amplifies the jump in each time step for a prompted image relative to a baseline prompt. This 
+      increased richness of the prompt leads to better quality images. 
+    </p>
+
+    <h3>Image to Image</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/original_campanile.png" align="middle" width="125vw" />
+            <figcaption> Campanile </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_campanile.jpg" align="middle" width="600vw" />
+            <figcaption> Campanile Translated </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/dog.jpg" align="middle" width="125vw" />
+            <figcaption> Dog</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_custom1.jpg" align="middle" width="600vw" />
+            <figcaption> Dog Translated </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/goldengate.jpg" align="middle" width="125vw" />
+            <figcaption> Golden Gate </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_custom2.jpg" align="middle" width="600vw" />
+            <figcaption> Golden Gate Translated</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>By applying various levels of noise to an image (using the forward method above), we can have the model try to recover the original. Since the model is not perfect, 
+      we get translated images that are similar to our prompt. With increased levels of noise, the images get more and more different, since less information is recoverable. 
+    </p>
+
+    
+    <h3>Editing Hand Drawn</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/spongeside.jpg" align="middle" width="125vw" />
+            <figcaption> Spongebob Side </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_171_custom_web.jpg" align="middle" width="600vw" />
+            <figcaption> Spongebob Side Edited </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/handdrawn_tree.jpg" align="middle" width="125vw" />
+            <figcaption> Hand Drawn 2: Tree</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_171_drawn1.jpg" align="middle" width="600vw" />
+            <figcaption> Tree Edited </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/handdrawn_car.jpg" align="middle" width="125vw" />
+            <figcaption> Hand Drawn 1: Car </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_171_drawn2.jpg" align="middle" width="600vw" />
+            <figcaption> Car Edited</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      Similarly, we can apply the image translation to our own images. I tried to hand draw a car... I think I did a good job on the tree.
+      The diffusion model was able to recover the image and provide a little bit of realism and detail.
+    </p>
+    <h3>Inpainting</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/original_campanile.png" align="middle" width="125vw" />
+            <figcaption> Campanile </figcaption>
+          </td>
+          <td>
+            <img src="out/mask2.jpg" align="middle" width="125vw" />
+            <figcaption> Mask </figcaption>
+          </td>
+          <td>
+            <img src="out/pt_172_inpaint1.jpg" align="middle" width="125vw" />
+            <figcaption> Inpaint </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/cat.jpg" align="middle" width="125vw" />
+            <figcaption> Cat </figcaption>
+          </td>
+          <td>
+            <img src="out/mask1.jpg" align="middle" width="125vw" />
+            <figcaption> Mask </figcaption>
+          </td>
+          <td>
+            <img src="out/cat_inpaint.jpg" align="middle" width="125vw" />
+            <figcaption> Inpaint </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/penguin.jpg" align="middle" width="125vw" />
+            <figcaption> Penguin </figcaption>
+          </td>
+          <td>
+            <img src="out/mask3.jpg" align="middle" width="125vw" />
+            <figcaption> Mask </figcaption>
+          </td>
+          <td>
+            <img src="out/pt_172_inpaint3.jpg" align="middle" width="125vw" />
+            <figcaption> Inpaint </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      By masking out parts of the image, we can keep some parts static while diffusing particular portions of the image, to get some interesting results. 
+    </p>
+    <h3>Text-Conditional Image-</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/original_campanile.png" align="middle" width="125vw" />
+            <figcaption> Campanile  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_rocketship_campanile.jpg" align="middle" width="600vw" />
+            <figcaption> Campanile + "a rocket ship"</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/telegraph.jpg" align="middle" width="125vw" />
+            <figcaption> Telegraph  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_snowy_berkeley.jpg" align="middle" width="600vw" />
+            <figcaption> Telegraph + "an oil painting of a snowy mountain village"  </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/luigi.jpg" align="middle" width="125vw" />
+            <figcaption> Luigi </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_17_luigi_barista.jpg" align="middle" width="600vw" />
+            <figcaption> Luigi + "a photo of a hipster barista" </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      After we add noise, we can also guide the new image with a new prompt to control the type of similar image we get. Above are examples of 
+      images that were noised and then diffused back with the associated prompt, to get a similar and cool result. 
+    </p>
+    <h3>Visual Anagrams</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt_18_flip1.jpg" align="middle" width="300vw" />
+            <figcaption> Old Man / People around a Fire </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_18_flip2.jpg" align="middle" width="300vw" />
+            <figcaption> Skull / Waterfall </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_18_flip3.jpg" align="middle" width="300vw" />
+            <figcaption> Rocketship / Dog </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      While diffusing, we can manipulate our trajectory by calculating the noise for a right side up image and another upside down image, 
+      simultaneously. By weighting the prior's noise and the latter's flipped noise appropriately, we can create effects like above, where 
+      the images look different right side up & upside down. 
+    </p>
+
+    <h3>Hybrid Images</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/pt_110_hybrid.jpg" align="middle" width="200vw" />
+            <figcaption> Skull from far, Waterfall from close </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_110_hybrid_2.jpg" align="middle" width="200vw" />
+            <figcaption> Dog from Far, People around Fire from Close </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/pt_110_hybrid_3.jpg" align="middle" width="200vw" />
+            <figcaption> Rocketship from Far, Village Rooftop from Close</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      We can also create hybrid images. By manipulating our trajectory to low pass one prompt's results and high pass the other prompt's results, we can 
+      generate samples where the lower frequencies are controlled by one prompt and the high frequencies are controlled by the other. As a result, 
+      an image can look different depending on where you see it from. 
+    </p>
+    <h1 align="middle"> Part B: Implementing Diffusion from Scratch </h1>
+    <h2 align="middle"> Unconditioned UNet </h2>
+
+    
+    
+    <h3>Noised MNIST</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/visualizing_denoising.jpg" align="middle" width="600vw" />
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      Above, we took a sample image from MNIST and applied various levels of noise to it. We generated a gaussian matrix of noise 
+      and then scaled this noise by sigma before adding it to the original, to get the results above. This helps visualize the denoising process we want to implement. 
+    </p>
+    <h3>Training Loss</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/uncond_training_loss.jpg" align="middle" width="600vw" />
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      We create a unconditional UNet. The UNet has an auto-encoder like architecture that downsamples informations before upsampling, but it also 
+      sends high frequency information from the downsampling segment to the upsampling directly to maintain important high frequency infromation that can help 
+      create detailed images. Above is the training loss in predicting noise. 
+    </p>
+
+    <h3> Denoising </h3>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/results_epoch1.jpg" align="middle" width="400vw" />
+            <figcaption> After 1 Epoch </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/results_epoch5.jpg" align="middle" width="400vw" />
+            <figcaption> After 5 Epochs </figcaption>
+          </td>
+        </tr>
+        
+      </table>
+    </div>
+    <p> Above are how the UNet did at 1 epoch and 5 Epochs at denoising the image. The left is the original. The middle is 
+      with noise added. The last column is what the model recreated. 
+    </p>
+
+
+    <h3>Out of Distribution Testing</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/out_of_distribution_test.jpg" align="middle" width="600vw" />
+          </td>
+        </tr>
+        </table>
+    </div>
+    <p>
+      This model was trained to denoise images at sigma = 0.5. As a result, it can behave in unexpected ways with different levels of noise as shown above. 
+    </p>
+    <h2 align="middle"> Time Conditioned UNet </h2>
+    
+    
+    <h3>Training Loss</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/time_cond_training_loss.jpg" align="middle" width="600vw" />
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <p>
+      We implement a time conditioned UNet. By injecting a the time of our denoising into the UNet, we can have a singular model 
+      denoise at various levels of noise. To do this, we normalize the time to [0,1] and broadcast it across the channels of the bottleneck, 
+      so it has a high influence on the upsampling segment of the network. We also inject again in between the upsampling. 
+    </p>
+    <h3>Sampling Results</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/time_conditioned_grid_5_1.jpg" align="middle" width="600vw" />
+            <figcaption> After 5 Epochs </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/time_conditioned_grid_20.jpg" align="middle" width="600vw" />
+            <figcaption> After 20 Epochs </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      Above are the results of the model at denoising images at random t values after 5 epochs and after 20 epochs. 
+      We can see that the model just wants to generate samples from MNIST, with no understanding of the difference in 
+      labels and the numbers of each, which leads to some non-digit looking figures. 
+    </p>
+    <h2 align="middle"> Class Conditioned UNet </h2>
+    
+    
+    <h3>Training Loss</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/class_cond_training_loss.jpg" align="middle" width="600vw" />
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      Now, we inject the label or the digit value of each class by one hot encoding the label (0 - 9) and then applying a Linear layer to 
+      reproduce it across multiple channels. Using broadcasting, we can mulitiply this value by the unflatten layer before injecting time, 
+      to influence the trajectory of the model. Above is the training loss. 
+    </p>
+    <h3>Sampling Results</h3>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/class_conditioned_grid_epoch_5.jpg" align="middle" width="600vw" />
+            <figcaption> After 5 Epochs </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/class_conditioned_grid.jpg" align="middle" width="600vw" />
+            <figcaption> After 20 Epochs </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>
+      Lastly, with this class-conditioned sampling, we get more realistic looking numbers. 
+    </p>
+    <h2>Reflection</h2>
+    <p>
+      It was really interesting to use deep learning to sample across different images and create many interesting effects. I also got to understand the nature 
+      of solving problems where compute time is not as readily available. 
+    </p>
+</body>
+</html>
