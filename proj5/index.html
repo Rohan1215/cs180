@@ -30,10 +30,10 @@
 
 
   <p>
-    In this project, we implement diffusion using deep learning in PyTorch. First, we implement many interesting 
-    methods to sample from the set of real images using Stability AI's <a href = "https://huggingface.co/docs/diffusers/en/api/pipelines/deepfloyd_if">Deep Floyd IF</a> model. 
-    This includes inpainting, image to image translation, and the generation of new images altogether. In part B,
-    we train a UNet architecture from scratch to generate automatic handwritten numbers from the MNIST dataset. 
+    In this project, we implement diffusion using deep learning in PyTorch. First, we implement a a variety of algorithms to sample from the set 
+    of real images using Stability AI's <a href = "https://huggingface.co/docs/diffusers/en/api/pipelines/deepfloyd_if">Deep Floyd IF</a> model. 
+    This includes inpainting, image to image translation, visual anagrams, and the generation of new images altogether. In part B,
+    we build and train a UNet architecture from scratch to generate automatic handwritten numbers off of MNIST. 
   </p>
  
 
@@ -159,7 +159,7 @@
         </tr>
       </table>
     </div>
-    <p>Here we appllied low pass filtering to isolate lower frequencies of the image</p>
+    <p>Here we applied low pass filtering to isolate lower frequencies of the image</p>
 
     <h3>One Step Denoising</h3>
     <div align="middle">
@@ -172,7 +172,7 @@
         </tr>
       </table>
     </div>
-    <p>Here we used DeepFloyd IF to find the noise and derived a formula to remove it from the noisy image and guess the clean image</p>
+    <p>Here we used DeepFloyd to calculate the noise and derived a formula to remove it from the noisy image and guess the clean image</p>
     <h3>Iterative Denoising</h3>
     <div align="middle">
       <table style="width:100%">
@@ -202,7 +202,7 @@
       </table>
     </div>
     <p>
-      Here we applied the DDPM Diffusion process to iteratively denoise the image slightly over many timesteps.
+      Here we applied the DDPM Diffusion process to iteratively denoise the image slightly over many timesteps to turn pure noise into a sample from the set of real images.
     </p>
     <div align="middle">
       <table style="width:100%">
@@ -246,7 +246,7 @@
         </tr>
       </table>
     </div>
-    <p> Above are example images from the default DDPM. We can see the images are pretty arbitrary and can have better quality.</p>
+    <p> Above are example images from the default DDPM. We can see the images are more like what an alien would think we see, so these can have better quality.</p>
     <h3>Classifier Free Guidance</h3>
     <div align="middle">
       <table style="width:100%">
