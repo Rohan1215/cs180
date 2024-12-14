@@ -120,7 +120,7 @@
         </tr>
       </table>
     </div>
-    <p>Decreasing the learning rate prevented the model from learning</p>
+    <p>Increasing the learning rate prevented the model from learning</p>
     <br>
     <p>Adjusting Positional Encoding Length </p>
     <br>
@@ -173,7 +173,7 @@
         </tr>
       </table>
     </div>
-    <p>New York Model: L = 10, Channel Size = 256, Learning Rate = 1e-2, Total Iterations = 2000</p>
+    <p>New York Model: L = 10, Channel Size = 256, Learning Rate = 1e-2, Total Iterations = 4000</p>
     <div align="middle">
       <table style="width:100%">
         <tr align="center">
@@ -330,7 +330,7 @@
     <p>
       For background colors, I looked at the final element of the T array which carried the tranmittence of light at each point across the ray. If this value was high at the end of the ray, 
       that would mean there aren't any dense objects in between so the ray would be generating the background. As a result, I looked for this component in each ray using torch.where() and if the 
-      T value was high (>0.999), I'd replace it with a bluish-green color, although the model still has some inaccuracies in some frames and around the edges.  
+      T value was greater than a threshold (>0.999), I'd replace it with a bluish-green color, although the model still has some inaccuracies in some frames and around the edges.  
     </p>
     <div align="middle">
       <table style="width:100%">
@@ -349,7 +349,7 @@
         <tr align="center">
           <td>
             <img src="out/nerf_color.gif" align="middle" width="325vw" />
-            <figcaption> I just found this in my downloads folder. I dont know when or how I made it but its kinda dope</figcaption>
+            <figcaption> I just found this in my downloads folder. I dont know when or how I made it but its kinda dope. Edit: Its a background color render with a lower threshold * -1</figcaption>
           </td>
         </tr>
       </table>
