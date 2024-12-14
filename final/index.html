@@ -1,0 +1,361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 180 NeRF</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+  <h1 align="middle">CS 180: Computer Vision, Fall 2024</h1>
+  <h1 align="middle">Final: Neural Radiance Fields (NeRF) </h1>
+  <h2 align="middle"> Rohan Gulati </h2>
+  <h3 align="middle">SID: 3037864000 </h3>
+
+
+  <br><br>
+
+  <div>
+    <h2 align="middle">Overview</h2>
+    <p>
+ 
+    </p>
+    <br>
+    <p>
+      In this project, we use deep learning to generate a neural radiance field or a 3D reconstruction of an object using pictures taken at different angles. By sampling rays in world space from 
+      images, sampling points along those rays, and learning the color and opacity of each world-space coordinate, we can mimic the way light diffuses through air to render a 3 dimensional 
+      object at any angle.  
+    </p>
+  </div>
+
+  <h2 align="middle">2D Neural Field</h2>
+
+  <p>Before designing a multi-view neural radiance field, I implemented a neural radiance field in PyTorch to recreate an rgb image off of image coordinates with the below architecture.
+    We first normalize our image and then apply positional encoding on the input layer of the network to deeply capture the spatial information of the coordinates. I used 4 hidden layers of 
+    initially 256 neurons each with ReLU activations in between and a final sigmoid activation. Lastly, I used Mean Squared Error to evaluate the loss and the Adam optimizer for gradient descent.
+  </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf2d_arch.png" align="middle" width="325vw" />
+            <figcaption> 2D Neural Field MLP</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox.jpg" align="middle" width="325vw" />
+            <figcaption> Test Image 1: Fox </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Original Fox Model 1: L = 10, Channel Size = 256, Learning Rate = 1e-2</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/fox_m1_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox_m1_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Adjusting Learning Rate </p>
+    <p>Fox Model 2A: L = 10, Channel Size = 256, Learning Rate = 1e-4</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/fox_m2_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox_m2_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Reducing learning rate made model take longer to converge to the clear image.</p>
+    <p>Fox Model 2B: L = 10, Channel Size = 256, Learning Rate = 1e-1</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/fox_m3_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox_m3_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Decreasing the learning rate prevented the model from learning</p>
+    <br>
+    <p>Adjusting Positional Encoding Length </p>
+    <br>
+    <p>Fox Model 3A: L = 5, Channel Size = 256, Learning Rate = 1e-2</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/fox_m4_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox_m4_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Decreasing the Positional Encoding length prevented the model from identifying high frequency features like the pupils of the fox.</p>
+    <br>
+    <p>Fox Model 3B: L = 20, Channel Size = 256, Learning Rate = 1e-2</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/fox_m5_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/fox_m5_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <br>
+    <p>Increasing the Positional Encoding length had negligible differences compared to the default settings</p>
+    <br>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nyc.jpg" align="middle" width="600vw" />
+            <figcaption> Test Image 2: Winter in New York </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>New York Model: L = 10, Channel Size = 256, Learning Rate = 1e-2, Total Iterations = 2000</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nyc_m1_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/nyc_m1_out_c.jpg" align="middle" width="600vw" />
+            <figcaption> Result</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>New York Model 2: L = 20, Channel Size = 768, Learning Rate = 0.0015, Total Iterations = 8000</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nyc_m2_itr.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/nyc_m2_out.jpg" align="middle" width="600vw" />
+            <figcaption> Result </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+  <h2 align="middle">Multi-View NeRF</h2>
+
+  <div align="middle">
+    <table style="width:100%">
+      <tr align="center">
+        <td>
+          <img src="out/nerf_data_1.jpg" align="middle" width="325vw" /> /
+        </td>
+        <td>
+          <img src="out/nerf_data_2.jpg" align="middle" width="325vw" />
+        </td>
+        
+      </tr>
+    </table>
+  </div>
+  <p>Ray Sampling</p>
+  <p>To collect our world space data, we first need to convert our image coordinates into rays, so we can pair our rays with pixel values later on. In order to do this, 
+    we first solve this problem for a single camera. We have to consider the setting in image space, camera space, and world space. We can generate samples of pixels easily in 
+    image space and then invert the intrinsic and extrinsic matrices of the camera in order to find where the pixel on the image would lie in world space. 
+  </p>
+  <p>
+    We can use the camera's extrinsic matrix to similarly find where it exists in world space and with the world space locations of both the camera and the pixels, we can generate rays
+    along these lines. We add noise to the samples to better generalize over the world space coordinates. The ray sampling results are visualized below. 
+  </p>
+
+  <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/raysample_100_100_1.png" align="middle" width="325vw" />
+            <figcaption> 100 Rays, 100 Cameras</figcaption>
+          </td>
+          <td>
+            <img src="out/raysample_100_100_2.png" align="middle" width="325vw" />
+            <figcaption> 100 Rays, 100 Cameras </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/raysample_100_1_1.png" align="middle" width="325vw" />
+            <figcaption> 100 Rays, 1 Camera</figcaption>
+          </td>
+          <td>
+            <img src="out/raysample_100_1_2.png" align="middle" width="325vw" />
+            <figcaption> 100 rays, 1 Camera </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/raysample_1000_100_1.png" align="middle" width="325vw" />
+            <figcaption> 1000 rays, 100 Cameras </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Neural Network Architecture</p>
+    <p> Here, we adjust the neural network to include inputs in both world coordinates and ray directions and output their rgb colors and densities. We utilize skip connections 
+      to ensure the spatial information is not forgotten in the 8+ layer network. To compute the predicted color of each ray, we use the volume rendering formula, which aggregates 
+      the color of each coordinate along the ray weighted by its density and the opacity of that point. We implemented volume rendering in a vectorized fashion in PyTorch to ensure it was differentiable 
+      for the loss function.
+    </p>  
+      <p>We compute this for every ray and in addition to the mean squared loss with the true pixel value 
+      from the image to backpropagate the error through the network. Here, we use a batch size of 10,000, a learning rate of 3e-3, and the Adam optimizer. 
+    </p>
+
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf_arch.png" align="middle" width="800vw" />
+            <figcaption> Architecture</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Training, Learning Rate = 2e-3, </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <p>Validation</p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf_val_psnr.jpg" align="middle" width="325vw" />
+            <figcaption> Peak Signal to Noise Ratio</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/nerf_val_updates.jpg" align="middle" width="1000vw" />
+            <figcaption> Results Across Training Iterations </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf.gif" align="middle" width="325vw" />
+            <figcaption> 3D Render </figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+    <h2>Bells & Whistles</h2>
+    <h3>NeRF Depth & Color Map</h3>
+    <p>For depth, we use the same model to compute rgb values and densities for every ray. However, we switch out the rgb values with a gradient of white to black values 
+      from the camera to the end of the ray, while keeping the densities the same. 
+    </p>
+    <p>
+      For background colors, I looked at the final element of the T array which carried the tranmittence of light at each point across the ray. If this value was high at the end of the ray, 
+      that would mean there aren't any dense objects in between so the ray would be generating the background. As a result, I looked for this component in each ray using torch.where() and if the 
+      T value was high (>0.999), I'd replace it with a bluish-green color, although the model still has some inaccuracies in some frames and around the edges.  
+    </p>
+    <div align="middle">
+      <table style="width:100%">
+        <tr align="center">
+          <td>
+            <img src="out/nerf_depth.gif" align="middle" width="325vw" />
+            <figcaption> 3D Render - Depth</figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/nerf_color_2.gif" align="middle" width="325vw" />
+            <figcaption> 3D Render - Background Color </figcaption>
+          </td>
+        </tr>
+        <tr align="center">
+          <td>
+            <img src="out/nerf_color.gif" align="middle" width="325vw" />
+            <figcaption> I just found this in my downloads folder. I dont know when or how I made it but its kinda dope</figcaption>
+          </td>
+        </tr>
+      </table>
+    </div>
+
+
+
+</body>
+</html>
